@@ -11,6 +11,7 @@ st.sidebar.header("Parámetros del sistema")
 f_emit = st.sidebar.slider("Frecuencia de emisión (Hz)", 0.5, 10.0, 2.0, step=0.1)
 v_source = st.sidebar.slider("Velocidad de la fuente (m/s)", -100, 100, 0, step=1)
 v_sound = st.sidebar.slider("Velocidad del sonido (m/s)", 100, 500, 343, step=1)
+observer_pos = st.sidebar.slider("Posición del observador (m)", -50, 150, 0, step=1)
 
 # Simulación
 dt = 0.05
@@ -54,10 +55,13 @@ for frame in range(num_frames):
         circle = plt.Circle((wave["pos"], 0), wave["radius"], fill=False, color='purple', linewidth=1)
         ax1.add_artist(circle)
 
-    ax1.plot(snap["source_pos"], 0, 'ro', label="Fuente de sonido")
+    ax1.plot(snap["source_pos"], 0, 'ro', markersize=10, label="Fuente de sonido")
+    ax1.plot(observer_pos, 0, 'go', markersize=10, label="Observador")
     ax1.legend()
 
-    v_rel = v_sound - v_source
+    distance_to_source = snap["source_pos"] - observer_pos
+    v_rel = v_sound - v_source if distance_to_source > 0 else v_sound + v_source
+
     if v_rel <= 0:
         f_percibida = 0
         y_wave = np.zeros_like(t_wave)
@@ -75,4 +79,4 @@ for frame in range(num_frames):
     placeholder.pyplot(fig)
     time.sleep(0.1)
 
-st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler para una fuente de sonido en movimiento y un observador en reposo.")
+st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler para una fuente de sonido en movimiento y un observador en una posición seleccionada.")
