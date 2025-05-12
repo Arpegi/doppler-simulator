@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import os
 
 st.set_page_config(layout="wide")
 st.title("\U0001F50A Simulador Interactivo del Efecto Doppler (Ondas Sonoras)")
@@ -78,5 +79,18 @@ for frame in range(num_frames):
 
     placeholder.pyplot(fig)
     time.sleep(0.1)
+
+# Mapeo simple de frecuencia a sonido
+def get_closest_audio(freq):
+    options = [220, 330, 440, 550, 660]
+    closest = min(options, key=lambda x: abs(x - freq))
+    return f"doppler_sounds/doppler_{closest}Hz.wav"
+
+st.markdown("### \U0001F50A Escucha la frecuencia percibida")
+audio_path = get_closest_audio(f_percibida)
+if os.path.exists(audio_path):
+    st.audio(audio_path, format="audio/wav")
+else:
+    st.warning("Archivo de sonido no encontrado. Asegúrate de tener los .wav disponibles.")
 
 st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler para una fuente de sonido en movimiento y un observador en una posición seleccionada.")
