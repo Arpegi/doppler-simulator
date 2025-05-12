@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import os
+from scipy.io.wavfile import write as write_wav
 
 st.set_page_config(layout="wide")
 st.title("\U0001F50A Simulador Interactivo del Efecto Doppler (Ondas Sonoras)")
@@ -25,12 +26,6 @@ audio_placeholder = st.empty()
 # Inicializar frame_count si no existe
 if "frame_count" not in st.session_state:
     st.session_state.frame_count = 0
-
-# Función para obtener archivo de audio más cercano
-def get_closest_audio(freq):
-    options = [220, 330, 440, 550, 660]
-    closest = min(options, key=lambda x: abs(x - freq))
-    return f"doppler_sounds/doppler_{closest}Hz.wav"
 
 # Bucle de animación
 for _ in range(200):
@@ -66,14 +61,20 @@ for _ in range(200):
 
     graph_placeholder.pyplot(fig)
 
-    # Mostrar audio correspondiente
-    audio_path = get_closest_audio(f_percibida)
-    if os.path.exists(audio_path):
-        with open(audio_path, 'rb') as audio_file:
+    # Generar archivo de sonido dinámico según f_percibida
+    if f_percibida > 0:
+        sample_rate = 44100
+        duration = 0.5
+        t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+        waveform = 0.5 * np.sin(2 * np.pi * f_percibida * t)
+        waveform_int = np.int16(waveform * 32767)
+        wav_path = "/tmp/doppler_temp.wav"
+        write_wav(wav_path, sample_rate, waveform_int)
+        with open(wav_path, 'rb') as audio_file:
             audio_placeholder.audio(audio_file.read(), format='audio/wav')
     else:
-        audio_placeholder.warning("Archivo de sonido no encontrado.")
+        audio_placeholder.warning("Frecuencia percibida inválida para reproducir sonido.")
 
     time.sleep(0.05)
 
-st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación visual continua y sonido percibido por el observador.")
+st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación visual continua y sonido generado dinámicamente según la frecuencia percibida.")
