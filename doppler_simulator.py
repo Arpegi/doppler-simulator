@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import os
 
 st.set_page_config(layout="wide")
 st.title("\U0001F50A Simulador Interactivo del Efecto Doppler (Ondas Sonoras)")
@@ -18,14 +19,21 @@ v_sound = st.sidebar.slider("Velocidad del sonido (m/s)", 100, 500, 343, step=1)
 observer_pos = st.sidebar.slider("Posición del observador (m)", -50, 150, 0, step=1)
 
 # Contenedor para animación
-placeholder = st.empty()
+graph_placeholder = st.empty()
+audio_placeholder = st.empty()
 
 # Inicializar frame_count si no existe
 if "frame_count" not in st.session_state:
     st.session_state.frame_count = 0
 
+# Función para obtener archivo de audio más cercano
+def get_closest_audio(freq):
+    options = [220, 330, 440, 550, 660]
+    closest = min(options, key=lambda x: abs(x - freq))
+    return f"doppler_sounds/doppler_{closest}Hz.wav"
+
 # Bucle de animación
-for _ in range(200):  # Ejecuta suficientes ciclos para mostrar animación continua
+for _ in range(200):
     frame_count = st.session_state.frame_count
     t_now = frame_count * 0.05
     st.session_state.frame_count += 1
@@ -56,7 +64,16 @@ for _ in range(200):  # Ejecuta suficientes ciclos para mostrar animación conti
     ax.plot(observer_pos, 0, 'go', markersize=10, label="Observador")
     ax.legend()
 
-    placeholder.pyplot(fig)
+    graph_placeholder.pyplot(fig)
+
+    # Mostrar audio correspondiente
+    audio_path = get_closest_audio(f_percibida)
+    if os.path.exists(audio_path):
+        with open(audio_path, 'rb') as audio_file:
+            audio_placeholder.audio(audio_file.read(), format='audio/wav')
+    else:
+        audio_placeholder.warning("Archivo de sonido no encontrado.")
+
     time.sleep(0.05)
 
-st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación visual continua.")
+st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación visual continua y sonido percibido por el observador.")
