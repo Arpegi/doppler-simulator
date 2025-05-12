@@ -25,6 +25,9 @@ snapshots = []
 
 placeholder = st.empty()
 
+# Variables para controlar la reproducción de audio actual
+last_audio_file = None
+
 for frame in range(num_frames):
     t_now = frame * dt
     source_pos = v_source * t_now
@@ -80,17 +83,21 @@ for frame in range(num_frames):
     placeholder.pyplot(fig)
     time.sleep(0.1)
 
-# Mapeo simple de frecuencia a sonido
+# Mapeo de frecuencia percibida a archivo de audio
+st.markdown("### \U0001F50A Escucha la frecuencia percibida")
+st.info("Haz clic en el botón ▶️ para reproducir el sonido correspondiente a la frecuencia percibida por el observador.")
+
 def get_closest_audio(freq):
     options = [220, 330, 440, 550, 660]
     closest = min(options, key=lambda x: abs(x - freq))
     return f"doppler_sounds/doppler_{closest}Hz.wav"
 
-st.markdown("### \U0001F50A Escucha la frecuencia percibida")
 audio_path = get_closest_audio(f_percibida)
+
 if os.path.exists(audio_path):
-    st.write(f"Reproduciendo archivo: {audio_path}")
-    st.audio(audio_path, format="audio/wav")
+    audio_file = open(audio_path, 'rb')
+    audio_bytes = audio_file.read()
+    st.audio(audio_bytes, format='audio/wav')
 else:
     st.warning("Archivo de sonido no encontrado. Asegúrate de tener los .wav disponibles.")
 
