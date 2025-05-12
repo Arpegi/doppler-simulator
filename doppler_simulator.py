@@ -14,49 +14,35 @@ v_source = st.sidebar.slider("Velocidad de la fuente (m/s)", -100, 100, 0, step=
 v_sound = st.sidebar.slider("Velocidad del sonido (m/s)", 100, 500, 343, step=1)
 observer_pos = st.sidebar.slider("Posición del observador (m)", -50, 150, 0, step=1)
 
-# Tiempo y posición actual
-t_now = time.time() % 5  # Resetea cada 5 segundos
-dt = 0.05
+# Tiempo actual (simulado en bucle con frame controlado por Streamlit)
+t_now = time.time() % 5
 source_pos = v_source * t_now
 
-# Olas emitidas
+# Emitir ondas en tiempos pasados
+dt = 0.05
 emission_times = np.arange(0, t_now, 1 / f_emit)
-wavefronts = [v_source * t + v_sound * (t_now - t) for t in emission_times]
-wave_sources = [v_source * t for t in emission_times]
+waves = [(v_source * t, v_sound * (t_now - t)) for t in emission_times]
 
-# Cálculo de frecuencia percibida
+# Calcular frecuencia percibida
 distance_to_source = source_pos - observer_pos
 v_rel = v_sound - v_source if distance_to_source > 0 else v_sound + v_source
-if v_rel <= 0:
-    f_percibida = 0
-    y_wave = np.zeros(1000)
-else:
-    f_percibida = f_emit * v_sound / v_rel
-    t_wave = np.linspace(0, 0.02, 1000)
-    y_wave = np.sin(2 * np.pi * f_percibida * t_wave)
+f_percibida = f_emit * v_sound / v_rel if v_rel > 0 else 0
 
-# Gráfico
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8), gridspec_kw={'height_ratios': [2, 1]})
-ax1.set_title("Ondas circulares emitidas por una fuente en movimiento")
-ax1.set_xlim(-50, 150)
-ax1.set_ylim(-100, 100)
-ax1.set_aspect('equal')
-ax1.grid(True)
+# Gráfico de ondas circulares
+fig, ax = plt.subplots(figsize=(8, 6))
+ax.set_title("Ondas circulares emitidas por una fuente en movimiento")
+ax.set_xlim(-50, 150)
+ax.set_ylim(-100, 100)
+ax.set_aspect('equal')
+ax.grid(True)
 
-for pos, center in zip(wavefronts, wave_sources):
-    circle = plt.Circle((center, 0), pos - center, fill=False, color='purple', linewidth=1)
-    ax1.add_artist(circle)
+for source_x, radius in waves:
+    circle = plt.Circle((source_x, 0), radius, fill=False, color='purple', linewidth=1)
+    ax.add_artist(circle)
 
-ax1.plot(source_pos, 0, 'ro', markersize=10, label="Fuente de sonido")
-ax1.plot(observer_pos, 0, 'go', markersize=10, label="Observador")
-ax1.legend()
-
-ax2.plot(t_wave, y_wave, color='blue')
-ax2.set_ylim(-1.5, 1.5)
-ax2.set_title(f"Onda Percibida - Frecuencia: {f_percibida:.1f} Hz")
-ax2.set_xlabel("Tiempo (s)")
-ax2.set_ylabel("Amplitud")
-ax2.grid(True)
+ax.plot(source_pos, 0, 'ro', markersize=10, label="Fuente de sonido")
+ax.plot(observer_pos, 0, 'go', markersize=10, label="Observador")
+ax.legend()
 
 st.pyplot(fig)
 
@@ -77,4 +63,4 @@ if os.path.exists(audio_path):
 else:
     st.warning("Archivo de sonido no encontrado. Asegúrate de tener los .wav disponibles.")
 
-st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación y sonido real calculado según el movimiento actual de la fuente.")
+st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación visual y sonido asociado a la frecuencia percibida.")
