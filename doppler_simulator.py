@@ -61,20 +61,22 @@ for _ in range(200):
 
     graph_placeholder.pyplot(fig)
 
-    # Generar archivo de sonido dinámico según f_percibida
-    if f_percibida > 0:
+    # Generar archivo de sonido dinámico según f_percibida si es válida y audible
+    if f_percibida >= 20:
         sample_rate = 44100
-        duration = 0.5
+        duration = 1.0
         t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
         waveform = 0.5 * np.sin(2 * np.pi * f_percibida * t)
         waveform_int = np.int16(waveform * 32767)
         wav_path = "/tmp/doppler_temp.wav"
         write_wav(wav_path, sample_rate, waveform_int)
+
+        audio_placeholder.markdown(f"**Frecuencia percibida: {f_percibida:.1f} Hz**")
         with open(wav_path, 'rb') as audio_file:
             audio_placeholder.audio(audio_file.read(), format='audio/wav')
     else:
-        audio_placeholder.warning("Frecuencia percibida inválida para reproducir sonido.")
+        audio_placeholder.warning("Frecuencia percibida fuera del rango audible (mín. 20 Hz)")
 
     time.sleep(0.05)
 
-st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación visual continua y sonido generado dinámicamente según la frecuencia percibida.")
+st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación visual continua y sonido generado dinámicamente según la frecuencia percibida por el observador.")
