@@ -2,10 +2,13 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import os
 
 st.set_page_config(layout="wide")
 st.title("\U0001F50A Simulador Interactivo del Efecto Doppler (Ondas Sonoras)")
+
+# Botón para reiniciar la animación
+if st.button("Reiniciar animación"):
+    st.session_state.frame_count = 0
 
 # Sidebar sliders
 st.sidebar.header("Parámetros del sistema")
@@ -14,11 +17,13 @@ v_source = st.sidebar.slider("Velocidad de la fuente (m/s)", -100, 100, 0, step=
 v_sound = st.sidebar.slider("Velocidad del sonido (m/s)", 100, 500, 343, step=1)
 observer_pos = st.sidebar.slider("Posición del observador (m)", -50, 150, 0, step=1)
 
-# Tiempo actual (simulado en bucle con frame controlado por Streamlit)
-t_now = time.time() % 5
+# Simulación interactiva
+frame_count = st.session_state.get("frame_count", 0)
+t_now = frame_count * 0.05
+st.session_state.frame_count = frame_count + 1
 source_pos = v_source * t_now
 
-# Emitir ondas en tiempos pasados
+# Emitir ondas anteriores
 dt = 0.05
 emission_times = np.arange(0, t_now, 1 / f_emit)
 waves = [(v_source * t, v_sound * (t_now - t)) for t in emission_times]
@@ -46,21 +51,4 @@ ax.legend()
 
 st.pyplot(fig)
 
-# Audio correspondiente
-st.markdown("### \U0001F50A Escucha la frecuencia percibida")
-st.info("Haz clic en el botón ▶️ para reproducir el sonido correspondiente a la frecuencia percibida por el observador.")
-
-def get_closest_audio(freq):
-    options = [220, 330, 440, 550, 660]
-    closest = min(options, key=lambda x: abs(x - freq))
-    return f"doppler_sounds/doppler_{closest}Hz.wav"
-
-audio_path = get_closest_audio(f_percibida)
-
-if os.path.exists(audio_path):
-    with open(audio_path, 'rb') as audio_file:
-        st.audio(audio_file.read(), format='audio/wav')
-else:
-    st.warning("Archivo de sonido no encontrado. Asegúrate de tener los .wav disponibles.")
-
-st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación visual y sonido asociado a la frecuencia percibida.")
+st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación visual actualizada dinámicamente.")
