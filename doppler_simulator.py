@@ -14,76 +14,53 @@ v_source = st.sidebar.slider("Velocidad de la fuente (m/s)", -100, 100, 0, step=
 v_sound = st.sidebar.slider("Velocidad del sonido (m/s)", 100, 500, 343, step=1)
 observer_pos = st.sidebar.slider("Posición del observador (m)", -50, 150, 0, step=1)
 
-# Simulación
+# Tiempo y posición actual
+t_now = time.time() % 5  # Resetea cada 5 segundos
 dt = 0.05
-num_frames = 50
-t_wave = np.linspace(0, 0.02, 1000)
+source_pos = v_source * t_now
 
-wavefronts = []
-emission_times = []
-snapshots = []
+# Olas emitidas
+emission_times = np.arange(0, t_now, 1 / f_emit)
+wavefronts = [v_source * t + v_sound * (t_now - t) for t in emission_times]
+wave_sources = [v_source * t for t in emission_times]
 
-placeholder = st.empty()
+# Cálculo de frecuencia percibida
+distance_to_source = source_pos - observer_pos
+v_rel = v_sound - v_source if distance_to_source > 0 else v_sound + v_source
+if v_rel <= 0:
+    f_percibida = 0
+    y_wave = np.zeros(1000)
+else:
+    f_percibida = f_emit * v_sound / v_rel
+    t_wave = np.linspace(0, 0.02, 1000)
+    y_wave = np.sin(2 * np.pi * f_percibida * t_wave)
 
-# Variables para controlar la reproducción de audio actual
-last_audio_file = None
+# Gráfico
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8), gridspec_kw={'height_ratios': [2, 1]})
+ax1.set_title("Ondas circulares emitidas por una fuente en movimiento")
+ax1.set_xlim(-50, 150)
+ax1.set_ylim(-100, 100)
+ax1.set_aspect('equal')
+ax1.grid(True)
 
-for frame in range(num_frames):
-    t_now = frame * dt
-    source_pos = v_source * t_now
+for pos, center in zip(wavefronts, wave_sources):
+    circle = plt.Circle((center, 0), pos - center, fill=False, color='purple', linewidth=1)
+    ax1.add_artist(circle)
 
-    if len(emission_times) == 0 or t_now - emission_times[-1] >= 1 / f_emit:
-        emission_times.append(t_now)
-        wavefronts.append(source_pos)
+ax1.plot(source_pos, 0, 'ro', markersize=10, label="Fuente de sonido")
+ax1.plot(observer_pos, 0, 'go', markersize=10, label="Observador")
+ax1.legend()
 
-    snapshot = {
-        "time": t_now,
-        "source_pos": source_pos,
-        "wavefronts": [
-            {"pos": pos, "radius": v_sound * (t_now - t_emit)}
-            for pos, t_emit in zip(wavefronts, emission_times)
-        ]
-    }
-    snapshots.append(snapshot)
+ax2.plot(t_wave, y_wave, color='blue')
+ax2.set_ylim(-1.5, 1.5)
+ax2.set_title(f"Onda Percibida - Frecuencia: {f_percibida:.1f} Hz")
+ax2.set_xlabel("Tiempo (s)")
+ax2.set_ylabel("Amplitud")
+ax2.grid(True)
 
-    snap = snapshot
+st.pyplot(fig)
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8), gridspec_kw={'height_ratios': [2, 1]})
-    ax1.set_title("Ondas circulares emitidas por una fuente en movimiento")
-    ax1.set_xlim(-50, 150)
-    ax1.set_ylim(-100, 100)
-    ax1.set_aspect('equal')
-    ax1.grid(True)
-
-    for wave in snap["wavefronts"]:
-        circle = plt.Circle((wave["pos"], 0), wave["radius"], fill=False, color='purple', linewidth=1)
-        ax1.add_artist(circle)
-
-    ax1.plot(snap["source_pos"], 0, 'ro', markersize=10, label="Fuente de sonido")
-    ax1.plot(observer_pos, 0, 'go', markersize=10, label="Observador")
-    ax1.legend()
-
-    distance_to_source = snap["source_pos"] - observer_pos
-    v_rel = v_sound - v_source if distance_to_source > 0 else v_sound + v_source
-
-    if v_rel <= 0:
-        f_percibida = 0
-        y_wave = np.zeros_like(t_wave)
-    else:
-        f_percibida = f_emit * v_sound / v_rel
-        y_wave = np.sin(2 * np.pi * f_percibida * t_wave)
-
-    ax2.plot(t_wave, y_wave, color='blue')
-    ax2.set_ylim(-1.5, 1.5)
-    ax2.set_title(f"Onda Percibida - Frecuencia: {f_percibida:.1f} Hz")
-    ax2.set_xlabel("Tiempo (s)")
-    ax2.set_ylabel("Amplitud")
-    ax2.grid(True)
-
-    placeholder.pyplot(fig)
-    time.sleep(0.1)
-
-# Mapeo de frecuencia percibida a archivo de audio
+# Audio correspondiente
 st.markdown("### \U0001F50A Escucha la frecuencia percibida")
 st.info("Haz clic en el botón ▶️ para reproducir el sonido correspondiente a la frecuencia percibida por el observador.")
 
@@ -95,10 +72,9 @@ def get_closest_audio(freq):
 audio_path = get_closest_audio(f_percibida)
 
 if os.path.exists(audio_path):
-    audio_file = open(audio_path, 'rb')
-    audio_bytes = audio_file.read()
-    st.audio(audio_bytes, format='audio/wav')
+    with open(audio_path, 'rb') as audio_file:
+        st.audio(audio_file.read(), format='audio/wav')
 else:
     st.warning("Archivo de sonido no encontrado. Asegúrate de tener los .wav disponibles.")
 
-st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler para una fuente de sonido en movimiento y un observador en una posición seleccionada.")
+st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler con animación y sonido real calculado según el movimiento actual de la fuente.")
