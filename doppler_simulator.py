@@ -89,6 +89,7 @@ def get_closest_audio(freq):
 st.markdown("### \U0001F50A Escucha la frecuencia percibida")
 audio_path = get_closest_audio(f_percibida)
 if os.path.exists(audio_path):
+    st.write(f"Reproduciendo archivo: {audio_path}")
     st.audio(audio_path, format="audio/wav")
 else:
     st.warning("Archivo de sonido no encontrado. Asegúrate de tener los .wav disponibles.")
