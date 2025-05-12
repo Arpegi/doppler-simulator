@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 st.set_page_config(layout="wide")
 st.title("\U0001F50A Simulador Interactivo del Efecto Doppler (Ondas Sonoras)")
@@ -12,30 +13,24 @@ v_source = st.sidebar.slider("Velocidad de la fuente (m/s)", -100, 100, 0, step=
 v_sound = st.sidebar.slider("Velocidad del sonido (m/s)", 100, 500, 343, step=1)
 
 # Simulación
-st.sidebar.markdown("---")
-st.sidebar.caption("El observador está en reposo en el origen")
-
-# Tiempo y espacio
 dt = 0.05
 num_frames = 50
 t_wave = np.linspace(0, 0.02, 1000)
 
-# Inicializar datos de onda
 wavefronts = []
 emission_times = []
 snapshots = []
 
-# Generar todos los cuadros de la animación
+placeholder = st.empty()
+
 for frame in range(num_frames):
     t_now = frame * dt
     source_pos = v_source * t_now
 
-    # Emite una nueva onda si corresponde
     if len(emission_times) == 0 or t_now - emission_times[-1] >= 1 / f_emit:
         emission_times.append(t_now)
         wavefronts.append(source_pos)
 
-    # Guardar datos para este cuadro
     snapshot = {
         "time": t_now,
         "source_pos": source_pos,
@@ -46,42 +41,38 @@ for frame in range(num_frames):
     }
     snapshots.append(snapshot)
 
-# Elegir frame a mostrar
-selected_frame = st.slider("Momento a mostrar (frame de animación)", 0, num_frames - 1, 0)
-snap = snapshots[selected_frame]
+    snap = snapshot
 
-# Gráfica de ondas circulares
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8), gridspec_kw={'height_ratios': [2, 1]})
-ax1.set_title("Ondas circulares emitidas por una fuente en movimiento")
-ax1.set_xlim(-50, 150)
-ax1.set_ylim(-100, 100)
-ax1.set_aspect('equal')
-ax1.grid(True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8), gridspec_kw={'height_ratios': [2, 1]})
+    ax1.set_title("Ondas circulares emitidas por una fuente en movimiento")
+    ax1.set_xlim(-50, 150)
+    ax1.set_ylim(-100, 100)
+    ax1.set_aspect('equal')
+    ax1.grid(True)
 
-for wave in snap["wavefronts"]:
-    circle = plt.Circle((wave["pos"], 0), wave["radius"], fill=False, color='purple', linewidth=1)
-    ax1.add_artist(circle)
+    for wave in snap["wavefronts"]:
+        circle = plt.Circle((wave["pos"], 0), wave["radius"], fill=False, color='purple', linewidth=1)
+        ax1.add_artist(circle)
 
-ax1.plot(snap["source_pos"], 0, 'ro', label="Fuente de sonido")
-ax1.legend()
+    ax1.plot(snap["source_pos"], 0, 'ro', label="Fuente de sonido")
+    ax1.legend()
 
-# Cálculo de frecuencia percibida
-v_rel = v_sound - v_source
-if v_rel <= 0:
-    f_percibida = 0
-    y_wave = np.zeros_like(t_wave)
-else:
-    f_percibida = f_emit * v_sound / v_rel
-    y_wave = np.sin(2 * np.pi * f_percibida * t_wave)
+    v_rel = v_sound - v_source
+    if v_rel <= 0:
+        f_percibida = 0
+        y_wave = np.zeros_like(t_wave)
+    else:
+        f_percibida = f_emit * v_sound / v_rel
+        y_wave = np.sin(2 * np.pi * f_percibida * t_wave)
 
-# Gráfica de forma de onda
-ax2.plot(t_wave, y_wave, color='blue')
-ax2.set_ylim(-1.5, 1.5)
-ax2.set_title(f"Onda Percibida - Frecuencia: {f_percibida:.1f} Hz")
-ax2.set_xlabel("Tiempo (s)")
-ax2.set_ylabel("Amplitud")
-ax2.grid(True)
+    ax2.plot(t_wave, y_wave, color='blue')
+    ax2.set_ylim(-1.5, 1.5)
+    ax2.set_title(f"Onda Percibida - Frecuencia: {f_percibida:.1f} Hz")
+    ax2.set_xlabel("Tiempo (s)")
+    ax2.set_ylabel("Amplitud")
+    ax2.grid(True)
 
-st.pyplot(fig)
+    placeholder.pyplot(fig)
+    time.sleep(0.1)
 
 st.caption("\U0001F9EE Esta simulación representa el Efecto Doppler para una fuente de sonido en movimiento y un observador en reposo.")
